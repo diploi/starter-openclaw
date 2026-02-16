@@ -4,8 +4,7 @@ on:
   push:
 
 env:
-  registry: public.ecr.aws
-  image: p8t2q7f4/diploi/starter-openclaw
+  project: p8t2q7f4/${{ github.repository }}
 
 jobs:
   define-components:
@@ -47,7 +46,7 @@ jobs:
         uses: diploi/action-build@v1.8
         with: ${{ matrix }}
         env:
-          project: p8t2q7f4/diploi/starter-openclaw # NOTE! This is different from normal buildfile, usually ${{ github.repository }}
+          project: ${{ env.project }}
           registry: ${{ steps.login-ecr-public.outputs.registry }}
           username: ${{ steps.login-ecr-public.outputs.docker_username }}
           password: ${{ steps.login-ecr-public.outputs.docker_password }}
