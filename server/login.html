@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OpenClaw Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * {
+        font-family: sans-serif;
+        font-size: 16px;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(1200px 800px at 20% 0%, rgba(138, 92, 255, 0.25), transparent 55%),
+          radial-gradient(900px 700px at 95% 10%, rgba(255, 92, 122, 0.22), transparent 55%), #0b1020;
+        color: #fff;
+      }
+      body,
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      body {
+        padding: 32px;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      p,
+      form,
+      hr {
+        max-width: min(400px, 100%);
+      }
+      p {
+        text-align: center;
+        opacity: 0.8;
+      }
+      form > p {
+        font-size: 12px;
+      }
+      input {
+        padding: 12px;
+        background: #31363f;
+        border-radius: 6px;
+        border: none;
+        color: #fff;
+      }
+      button,
+      .button {
+        padding: 10px 18px;
+        align-self: center;
+        text-decoration: none;
+        background: #6650fa;
+        border-radius: 64px;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+      }
+      a {
+        font-size: inherit;
+        color: inherit;
+      }
+      hr {
+        display: block;
+        margin: 32px 0;
+        width: 100%;
+        height: 2px;
+        background: #31363f;
+        border: none;
+      }
+      #error {
+        display: none;
+        margin: 0;
+        padding: 12px 0;
+        border-radius: 6px;
+        border: 2px solid #d05353;
+        color: color-mix(in lab, #d05353, 40% white);
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      viewBox="0 0 120 120"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      width="64"
+      height="64"
+      role="img"
+      aria-label="OpenClaw logo"
+    >
+      <defs>
+        <linearGradient id="lobster-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ff4d4d" />
+          <stop offset="100%" stop-color="#991b1b" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z"
+        fill="url(#lobster-gradient)"
+      />
+      <path
+        d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z"
+        fill="url(#lobster-gradient)"
+      />
+      <path
+        d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z"
+        fill="url(#lobster-gradient)"
+      />
+      <path d="M45 15 Q35 5 30 8" stroke="#ff4d4d" stroke-width="3" stroke-linecap="round" />
+      <path d="M75 15 Q85 5 90 8" stroke="#ff4d4d" stroke-width="3" stroke-linecap="round" />
+      <circle cx="45" cy="35" r="6" fill="#050810" />
+      <circle cx="75" cy="35" r="6" fill="#050810" />
+      <circle cx="46" cy="34" r="2.5" fill="#00e5cc" />
+      <circle cx="76" cy="34" r="2.5" fill="#00e5cc" />
+    </svg>
+    <h1>OpenClaw</h1>
+    <p>
+      <strong>You have been logged out.</strong><br />Login again from the
+      <a href="https://console.diploi.com/">Diploi Console</a>, or enter credentials for admin access below.
+    </p>
+    <a class="button" href="https://console.diploi.com/">Login via Diploi Console</a>
+    <hr />
+    <form action="/diploi-auth-form/v0.1" method="post">
+      <input name="username" placeholder="Username" />
+      <input name="password" placeholder="Password" type="password" />
+      <p id="error">Failed to login. Check your credentials.</p>
+      <p>
+        You can find the admin credentials from this deployments "Options" tab in the
+        <a href="https://console.diploi.com/">Diploi Console</a>.
+      </p>
+      <button>Login With Credentials</button>
+    </form>
+    <script>
+      if (new URLSearchParams(document.location.search).has('error')) {
+        document.getElementById('error').style = 'display: block;';
+      }
+    </script>
+  </body>
+</html>

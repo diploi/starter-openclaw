@@ -1,0 +1,33 @@
+{
+  "name": "component-nodejs",
+  "version": "1.0.0",
+  "main": "server/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n \"manager,server,ui\" -c \"yellow,cyan,magenta\" \"node server/processManager.ts\" \"npm run dev:server\" \"npm run dev:ui\"",
+    "dev:server": "node --watch server/index.ts",
+    "dev:ui": "npm --prefix web run dev -- --host 0.0.0.0",
+    "postinstall": "npm --prefix web install",
+    "build": "echo 'Add your build step here if one is required'",
+    "start": "concurrently -k \"node server/processManager.ts\" \"node server/index.ts\"",
+    "clean": "rm -rf openclaw.json agents credentials completions devices identity cron canvas workspace update-check.json"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.9",
+    "@types/node": "^25.2.0",
+    "hono": "^4.11.9",
+    "node-pty": "^1.1.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "concurrently": "^9.2.1"
+  },
+  "prettier": {
+    "printWidth": 140,
+    "trailingComma": "es5",
+    "singleQuote": true
+  }
+}

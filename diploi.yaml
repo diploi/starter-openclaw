@@ -1,0 +1,33 @@
+diploiVersion: v1.0
+type: starter
+name: OpenClaw
+description: A self-hosted OpenClaw, providing control UI for managing, and configuring the OpenClaw assistant. Pre-configured with Diploi custom AI proxy, ready to prompt and use with the OpenClaw assistant.
+previewImageUrls: []
+components:
+  - name: OpenClaw
+    identifier: openclaw
+    folder: /
+    package: https://github.com/diploi/component-nodejs#v24.13.0
+    prebuildImage: ghcr.io/diploi/starter-openclaw/openclaw:[tag]
+    env:
+      include:
+        - name: OPENCLAW_CONFIG_PATH
+          value: /app/openclaw.json
+        - name: OPENCLAW_STATE_DIR
+          value: /app
+        - name: DIPLOI_AI_GATEWAY_URL
+          value: '{diploi-ai-gateway-url}'
+        - name: DIPLOI_AI_GATEWAY_TOKEN
+          value: '{diploi-ai-gateway-token}'
+        - name: DIPLOI_AI_GATEWAY_TOKEN
+          value: '{diploi-ai-gateway-token}'
+        - name: DIPLOI_LOGIN_SECRET
+          value: 'xxabc123321cbaxx'
+        - name: DIPLOI_LOGIN_USERNAME
+          value: 'admin'
+        - name: DIPLOI_LOGIN_PASSWORD
+          value: 'password'
+    hosts:
+      - identifier: app
+        name: Control UI
+addons: []

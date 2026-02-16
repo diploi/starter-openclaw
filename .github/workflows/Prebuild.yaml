@@ -1,0 +1,41 @@
+name: Pre-Build Components
+
+on:
+  push:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  define-components:
+    name: Define Components
+    runs-on: ubuntu-latest
+    outputs:
+      components: ${{ steps.diploi-meta.outputs.components }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - id: diploi-meta
+        name: Diploi meta
+        uses: diploi/action-components@v1.7-alpha
+  run-builds:
+    name: Build ${{ matrix.name }} ${{ matrix.stage }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    needs: define-components
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.define-components.outputs.components) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Diploi build
+        uses: diploi/action-build@v1.8
+        with: ${{ matrix }}
+        env:
+          project: ${{ github.repository }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
