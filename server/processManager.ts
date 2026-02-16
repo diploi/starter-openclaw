@@ -188,7 +188,18 @@ async function main() {
         } catch {
           // ignore
         }
-        onExit();
+        proc = null;
+        writeStatusAndLog(
+          {
+            ...status,
+            state: 'stopped',
+            pid: null,
+            readyAt: null,
+            lastExit: { code: null, signal: null, at: new Date().toISOString() },
+          },
+          `Gateway already stopped (pid ${pid})`,
+        );
+        resolve();
       }
     });
   };
@@ -271,6 +282,15 @@ async function main() {
     } else {
       if (!proc) {
         await startChild();
+      } else if (status.state !== 'running') {
+        // Recover from stale "starting" states if the gateway is already reachable.
+        const reachable = await canConnect(status.target.host, status.target.port, 750);
+        if (reachable) {
+          writeStatusAndLog(
+            { ...status, state: 'running', readyAt: status.readyAt ?? new Date().toISOString(), lastError: null },
+            `Gateway reachable; marking running (pid ${status.pid})`,
+          );
+        }
       }
     }
   };
