@@ -32,25 +32,9 @@ RUN git clone --depth 1 --branch ${OPENCLAW_VERSION} https://github.com/openclaw
     find node_modules/.pnpm -maxdepth 1 -type d -name '*musl*' -exec rm -rf {} + && \
     rm -rf .git node_modules/.cache
 
-######## APP DEPS ########
-FROM node:22-bookworm-slim AS app-deps
-ARG FOLDER
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    g++ \
-    make \
-    python3 && \
-    rm -rf /var/lib/apt/lists/*
-
-WORKDIR ${FOLDER}
-COPY package*.json ./
-COPY web/package*.json ./web/
-
-RUN npm ci --include=dev && npm cache clean --force
-
 
 ######## RUNNER ########
-FROM node:22-bookworm-slim AS runner
+FROM node:22.22.0 AS runner
 ARG FOLDER
 
 WORKDIR /lib/openclaw
@@ -66,9 +50,8 @@ exec node --title=openclaw /lib/openclaw/dist/index.js "$@"
 EOF2
 
 WORKDIR ${FOLDER}
+
 COPY . .
-COPY --from=app-deps ${FOLDER}/node_modules ${FOLDER}/node_modules
-COPY --from=app-deps ${FOLDER}/web/node_modules ${FOLDER}/web/node_modules
 
 ENV NODE_ENV=development
 
