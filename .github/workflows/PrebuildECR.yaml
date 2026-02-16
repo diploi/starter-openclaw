@@ -36,7 +36,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::300197899440:role/ECRPrebuildPushRightsForGithubActionsRole
-          aws-region: eu-west-1
+          aws-region: us-east-1
       - name: Login to Amazon ECR Public
         id: login-ecr-public
         uses: aws-actions/amazon-ecr-login@v2
@@ -48,5 +48,5 @@ jobs:
         env:
           project: ${{ github.repository }}
           registry: ${{ steps.login-ecr-public.outputs.registry }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ steps.login-ecr-public.outputs.docker_username }}
+          password: ${{ steps.login-ecr-public.outputs.docker_password }}
