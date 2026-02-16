@@ -1,0 +1,55 @@
+name: Pre-Build Components ECR
+
+on:
+  push:
+
+permissions:
+  id-token: write   # needed for OIDC
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  define-components:
+    name: Define Components
+    runs-on: ubuntu-latest
+    outputs:
+      components: ${{ steps.diploi-meta.outputs.components }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - id: diploi-meta
+        name: Diploi meta
+        uses: diploi/action-components@v1.7-alpha
+  run-builds:
+    name: Build ${{ matrix.name }} ${{ matrix.stage }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    needs: define-components
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.define-components.outputs.components) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::300197899440:role/ECRPrebuildPushRightsForGithubActionsRole
+          aws-region: eu-west-1
+      - name: Login to Amazon ECR Public
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+      - name: Diploi build
+        uses: diploi/action-build@v1.8
+        with: ${{ matrix }}
+        env:
+          project: ${{ github.repository }}
+          registry: ${{ steps.login-ecr-public.outputs.registry }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
