@@ -2,7 +2,7 @@ diploiVersion: v1.0
 type: starter
 name: OpenClaw
 description: A self-hosted OpenClaw, providing control UI for managing, and configuring the OpenClaw assistant. Pre-configured with Diploi custom AI proxy, ready to prompt and use with the OpenClaw assistant.
-previewImageUrls: []
+previewImageUrls: [preview-1.jpg, preview-2.jpg]
 components:
   - name: OpenClaw
     identifier: openclaw
