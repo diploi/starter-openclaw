@@ -3,8 +3,9 @@ name: Pre-Build Components ECR
 on:
   push:
 
-#env:
-#  REGISTRY: ghcr.io
+env:
+  registry: public.ecr.aws
+  image: p8t2q7f4/diploi/starter-openclaw
 
 jobs:
   define-components:
