@@ -1,44 +1,98 @@
-<img alt="icon" src=".diploi/icon.svg" width="32">
+<img alt="OpenClaw icon" src=".diploi/icon.svg" width="32">
 
-# OpenClaw TODO: FIX THE README
+# Starter OpenClaw
 
-[![launch with diploi badge](https://diploi.com/launch.svg)](https://diploi.com/component/node)
-[![component on diploi badge](https://diploi.com/component.svg)](https://diploi.com/component/node)
-[![latest tag badge](https://badgen.net/github/tag/diploi/component-nodejs)](https://diploi.com/component/node)
+Diploi starter for running a self-hosted OpenClaw with:
+- a wrapper server (`server/`) that initializes config, manages the OpenClaw gateway, and exposes control APIs
+- a React/Vite control UI (`web/`)
 
-Start a demo environment (No card or registration needed)
-https://diploi.com/component/node
+## What This Project Does
 
-A generic Node.js component that can be used to run any Node.js app.
+On startup, the wrapper:
+1. Initializes `/app/openclaw.json` (if missing) via `openclaw onboard`
+2. Patches config defaults (gateway token, model provider, channel/plugin defaults)
+3. Starts and monitors the OpenClaw gateway on `127.0.0.1:18789`
+4. Proxies:
+   - `/dashboard` to OpenClaw gateway UI
+   - all other app routes to the Vite frontend
 
-Uses the official [node](https://hub.docker.com/_/node) Docker image.
+## Requirements
 
-## Operation
+- Node.js 22+
+- npm
+- OpenClaw runtime available as either:
+  - `openclaw` on `PATH`, or
+  - `/lib/openclaw/dist/index.js` (provided in this repo's Docker images)
 
-### Getting started
+## Environment Variables
 
-1. In the Dashboard, click **Create Project +**
-2. Under **Pick Components**, choose **Node.js**
-3. In **Pick Add-ons**, you can add one or multiple databases to your app
-4. Choose **Create Repository**, which will generate a new GitHub repo
-5. Lastly, click **Launch Stack**
+Common variables used by the wrapper:
 
-Link to guide (includes additional information)
-https://diploi.com/blog/hosting_node_apps
+- `PORT` (default: `3000`)
+- `HOSTNAME` (default: `0.0.0.0`)
+- `VITE_HOST` (default: `127.0.0.1`)
+- `VITE_PORT` (default: `5173`)
+- `OPENCLAW_CONFIG_PATH` (default: `/app/openclaw.json`)
+- `OPENCLAW_STATE_DIR` (default: `/app`)
+- `OPENCLAW_WORKSPACE_DIR` (default: `/app/workspace`)
+- `OPENCLAW_GATEWAY_TOKEN` (optional; generated if missing)
+- `DIPLOI_AI_GATEWAY_URL` / `DIPLOI_AI_GATEWAY_TOKEN` (optional model proxy wiring)
+- `DIPLOI_LOGIN_SECRET` (required to validate `diploi-jwt-login` cookie)
+- `DIPLOI_LOGIN_USERNAME` / `DIPLOI_LOGIN_PASSWORD` (credential login)
 
-### Development
+## Local Development
 
-Will run `npm install` when component is first initialized, and `npm run dev` when deployment is started.
+Install dependencies:
 
-### Production
+```bash
+npm install
+```
 
-Will build a production ready image. Image runs `npm install` & `npm build` when being created. Once the image runs, `npm start` is called.
+Run dev mode (process manager + wrapper API + Vite UI):
 
-### Notes
+```bash
+npm run dev
+```
 
-- If you are using packages that use native libraries (like `node-canvas` e.g.), it is a good idea to switch the `Dockerfile` and `Dockerfile.dev` to use `node:XX` instead of `node:XX-slim`. You can also add any missing libraries with `RUN apt update && apt install -y <package>` in the dockerfiles.
+This starts:
+- `server/processManager.ts`
+- `server/index.ts` (Hono wrapper API)
+- `web` Vite dev server
 
-## Links
+## Production Run
 
-- [Adding Node.js to a project](https://docs.diploi.com/building/components/nodejs)
-- [Node official page](https://nodejs.org/en)
+```bash
+npm run start
+```
+
+Note: current `npm run build` is a placeholder in `package.json`. If you need a build artifact, add a real build step first.
+
+## API Endpoints
+
+Wrapper endpoints:
+
+- `GET /healthz`
+- `GET /api/dashboard-token`
+- `GET /api/gateway/status`
+- `POST /api/gateway/start`
+- `POST /api/gateway/stop`
+- `POST /api/gateway/restart`
+- `POST /api/full-reset`
+- `POST /api/logout`
+- `WS /api/terminal-ws` (browser terminal)
+
+## Project Structure
+
+```text
+server/
+  index.ts            # wrapper server + proxy
+  processManager.ts   # gateway lifecycle manager
+  initOpenclaw.ts     # OpenClaw config bootstrap + patching
+  api.ts              # API routes
+  terminalWs.ts       # PTY websocket bridge
+web/
+  src/                # React UI
+Dockerfile.dev        # full dev image including OpenClaw build
+Dockerfile            # production runtime image
+diploi.yaml           # Diploi starter metadata
+```

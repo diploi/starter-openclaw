@@ -38,6 +38,8 @@ cron/
 gateway.token
 gateway.pid
 update-check.json
+workspace/
+logs/
 
 #telegram
 telegram

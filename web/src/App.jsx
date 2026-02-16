@@ -226,11 +226,18 @@ function App() {
       {/* Navigation Bar */}
       <nav className="navbar">
         <div className="navContent">
-          <div className="logo" aria-hidden="true">
-            <img src={openclawIcon} alt="" width={26} height={26} />
+          <div className="navBrand">
+            <div className="logo" aria-hidden="true">
+              <img src={openclawIcon} alt="" width={26} height={26} />
+            </div>
+            <div className="brandText">
+              <span className="brandTitle">OpenClaw</span>
+              <span className="brandSubtitle">Setup Page</span>
+            </div>
           </div>
-          <button className="btn" type="button" onClick={onLogout} aria-label="Logout">
+          <button className="btn navLogout" type="button" onClick={onLogout} aria-label="Logout">
             <img src={logoutIcon} alt="" width="20" height="20" />
+            <span>Logout</span>
           </button>
         </div>
       </nav>
@@ -287,17 +294,17 @@ function App() {
             <Section title="Instructions">
               <div className="muted instructionsText">
                 <p>
-                  This is Diploi set up page for OpenClaw, allowing OpenClaw gateway process's management through UI interface.
+                  This is Diploi Setup Page for OpenClaw, allowing gateway process's management through UI interface.
                 </p>
                 <p>
-                  You can restart the gateway or reset all OpenClaw data using the buttons on the left. The gateway status is displayed above, showing whether it's running, starting, stopping, or stopped, along with uptime information.
+                  You can restart the gateway or reset all OpenClaw data using the buttons on the left. The gateway status shows whether the gateway process is running, starting, stopping, or stopped, along with uptime information.
                 </p>
                 <p>
                   Configuring OpenClaw can be done either through the <a href="/dashboard" target="_blank" rel="noopener noreferrer">OpenClaw Dashboard</a> or by using the OpenClaw CLI.
-                  You can also edit openclaw.json directly in the Cloud IDE by clicking the "Code in the Browser" button on the OpenClaw Deployment page.                </p>
+                  You can also edit openclaw.json directly in the Cloud IDE by clicking the "Code in the Browser" button on the OpenClaw Deployment page.</p>
                 <p className="tip">
                   <strong>Documentation:</strong> For more detailed instructions and troubleshooting, please refer to the <a href="https://docs.openclaw.ai/start/getting-started" target="_blank" rel="noopener noreferrer">OpenClaw Documentation</a> or
-                  contact Diploi support if you need assistance with your OpenClaw deployment.
+                  contact Diploi support if you need any assistance with your OpenClaw deployment.
                 </p>
               </div>
             </Section>
