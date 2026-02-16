@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.4
-
 ARG FOLDER=/app
 
 FROM node:24.13.0
@@ -24,8 +22,7 @@ RUN git clone --depth 1 --branch ${OPENCLAW_VERSION} https://github.com/openclaw
     echo "Building OpenClaw from branch: ${OPENCLAW_VERSION}" && \
     git rev-parse HEAD > /lib/openclaw/openclaw-commit.txt
 
-RUN --mount=type=cache,target=/root/.pnpm-store \
-    pnpm install --frozen-lockfile && \
+RUN pnpm install --frozen-lockfile && \
     OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build && \
     npm_config_script_shell=bash pnpm ui:install && \
     npm_config_script_shell=bash pnpm ui:build && \
