@@ -28,6 +28,8 @@ RUN git clone --depth 1 --branch ${OPENCLAW_VERSION} https://github.com/openclaw
     npm_config_script_shell=bash pnpm ui:install && \
     npm_config_script_shell=bash pnpm ui:build && \
     CI=true pnpm prune --prod && \
+    find node_modules -type f -name '*.map' -delete && \
+    find node_modules/.pnpm -maxdepth 1 -type d -name '*musl*' -exec rm -rf {} + && \
     rm -rf .git node_modules/.cache
 
 ######## APP DEPS ########
