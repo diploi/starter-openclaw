@@ -7,8 +7,8 @@ permissions:
   id-token: write   # needed for OIDC
   contents: read
 
-env:
-  REGISTRY: ghcr.io
+#env:
+#  REGISTRY: ghcr.io
 
 jobs:
   define-components:
