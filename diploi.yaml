@@ -22,7 +22,7 @@ components:
         - name: DIPLOI_AI_GATEWAY_TOKEN
           value: '{diploi-ai-gateway-token}'
         - name: DIPLOI_LOGIN_SECRET
-          value: 'xxabc123321cbaxx'
+          value: "base64:${generate-random-bytes:32}"
         - name: DIPLOI_LOGIN_USERNAME
           value: 'admin'
         - name: DIPLOI_LOGIN_PASSWORD
