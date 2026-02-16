@@ -8,7 +8,7 @@ components:
     identifier: openclaw
     folder: /
     package: https://github.com/diploi/component-nodejs#v24.13.0
-    prebuildImage: ghcr.io/diploi/starter-openclaw/openclaw:[tag]
+    prebuildImage: public.ecr.aws/p8t2q7f4/diploi/starter-openclaw/openclaw:[tag]
     env:
       include:
         - name: OPENCLAW_CONFIG_PATH
