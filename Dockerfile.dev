@@ -2,18 +2,17 @@
 # This will be set by the GitHub action to the folder containing this component.
 ARG FOLDER=/app
 
-# Use Alpine for smaller image size
-FROM node:24.13.0-alpine
+FROM node:24.13.0
 ARG FOLDER=/app
 
 # Install system dependencies and setup user permissions in one layer
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     git \
     curl \
     ca-certificates \
     unzip \
-    sudo \
-    bash && \
+    sudo && \
+    rm -rf /var/lib/apt/lists/* && \
     echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node && \
     chmod 0440 /etc/sudoers.d/node
 
