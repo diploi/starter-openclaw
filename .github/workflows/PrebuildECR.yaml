@@ -3,10 +3,6 @@ name: Pre-Build Components ECR
 on:
   push:
 
-permissions:
-  id-token: write   # needed for OIDC
-  contents: read
-
 #env:
 #  REGISTRY: ghcr.io
 
@@ -26,7 +22,8 @@ jobs:
     name: Build ${{ matrix.name }} ${{ matrix.stage }}
     runs-on: ubuntu-latest
     permissions:
-      packages: write
+      id-token: write 
+      contents: read
     needs: define-components
     strategy:
       fail-fast: false
