@@ -1,25 +1,21 @@
+# syntax=docker/dockerfile:1.4
 # This will be set by the GitHub action to the folder containing this component.
 ARG FOLDER=/app
 
-# NOTE! Skip slim for now
-FROM node:24.13.0
+# Use Alpine for smaller image size
+FROM node:24.13.0-alpine
 ARG FOLDER=/app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies and setup user permissions in one layer
+RUN apk add --no-cache \
     git \
     curl \
     ca-certificates \
     unzip \
     sudo \
-    && rm -rf /var/lib/apt/lists/*
-
-# Allow the `node` user (uid 1000) to sudo to root without a password
-RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node && chmod 0440 /etc/sudoers.d/node
-
-# Install Bun (required for build)
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
+    bash && \
+    echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node && \
+    chmod 0440 /etc/sudoers.d/node
 
 # Enable corepack for pnpm
 RUN corepack enable
@@ -32,17 +28,13 @@ RUN git clone --depth 1 --branch ${OPENCLAW_VERSION} https://github.com/openclaw
     echo "Building OpenClaw from branch: ${OPENCLAW_VERSION}" && \
     git rev-parse HEAD > /lib/openclaw/openclaw-commit.txt
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Build
-RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
-# Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
-RUN npm_config_script_shell=bash pnpm ui:install
-RUN npm_config_script_shell=bash pnpm ui:build
-
-# Clean up build artifacts to reduce image size
-RUN rm -rf .git node_modules/.cache
+# Install dependencies and build in one layer with cache optimization
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm install --frozen-lockfile && \
+    OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build && \
+    npm_config_script_shell=bash pnpm ui:install && \
+    npm_config_script_shell=bash pnpm ui:build && \
+    rm -rf .git node_modules/.cache
 
 # Global launcher so the process shows as "openclaw"
 RUN install -m 0755 /dev/null /usr/local/bin/openclaw && \
