@@ -10,7 +10,7 @@ env:
 jobs:
   define-components:
     name: Define Components
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       components: ${{ steps.diploi-meta.outputs.components }}
     steps:
@@ -21,7 +21,7 @@ jobs:
         uses: diploi/action-components@v1.7-alpha
   run-builds:
     name: Build ${{ matrix.name }} ${{ matrix.stage }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       id-token: write 
       contents: read
