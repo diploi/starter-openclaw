@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Environment Not Supported</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(255, 255, 255, 0.06);
+      --panel-2: rgba(255, 255, 255, 0.08);
+      --text: rgba(255, 255, 255, 0.92);
+      --muted: rgba(255, 255, 255, 0.68);
+      --border: rgba(255, 255, 255, 0.12);
+      --brand: #ff5c7a;
+      --brand-2: #8a5cff;
+      --warn: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(1200px 800px at 20% 0%, rgba(138, 92, 255, 0.25), transparent 55%),
+        radial-gradient(900px 700px at 95% 10%, rgba(255, 92, 122, 0.22), transparent 55%), var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+        "Segoe UI Emoji";
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .panel {
+      width: min(620px, 100%);
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+      border-radius: 18px;
+      padding: 28px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 24px 60px rgba(3, 8, 19, 0.55);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      background: rgba(245, 158, 11, 0.12);
+      color: #ffd089;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--warn);
+      box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.2);
+      flex-shrink: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 34px);
+      line-height: 1.15;
+      letter-spacing: -0.4px;
+    }
+
+    p {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      max-width: 58ch;
+    }
+
+    .accent {
+      display: block;
+      margin-top: 14px;
+      width: 88px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    }
+
+    .title-gradient {
+      background: linear-gradient(135deg, #ffffff 8%, #ff92a7 48%, #a389ff 96%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="badge"><span class="dot"></span>Unsupported Environment</div>
+    <h1><span class="title-gradient">OpenClaw Starter Kit Unsupported in Production and Staging</span></h1>
+    <p>
+      OpenClaw Starter Kit is configured for development-only usage. The production and staging
+      environment modes are not available.
+    </p>
+    <p>
+      Please switch to development mode to use OpenClaw Starter Kit. If you have any questions or need
+      assistance, feel free to reach out to our support team or consult the OpenClaw documentation for more information.
+    </p>
+    <span class="accent" aria-hidden="true"></span>
+  </div>
+</body>
+</html>

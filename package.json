@@ -9,7 +9,6 @@
     "dev:ui": "npm --prefix web run dev -- --host 0.0.0.0",
     "postinstall": "npm --prefix web install",
     "build": "echo 'Add your build step here if one is required'",
-    "start": "concurrently -k \"tsx server/processManager.ts\" \"tsx server/index.ts\"",
     "clean": "rm -rf openclaw.json agents credentials completions devices identity cron canvas workspace update-check.json"
   },
   "dependencies": {

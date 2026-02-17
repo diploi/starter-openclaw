@@ -2,7 +2,7 @@
 
 # Starter OpenClaw
 
-Diploi starter for running a self-hosted OpenClaw with:
+Diploi starter for running a self-hosted OpenClaw in Diploi Development Mode with:
 - a wrapper server (`server/`) that initializes config, manages the OpenClaw gateway, and exposes control APIs
 - a React/Vite control UI (`web/`)
 
@@ -18,6 +18,7 @@ On startup, the wrapper:
 
 ## Requirements
 
+- Diploi's Development Environment
 - Node.js 22+
 - npm
 - OpenClaw runtime available as either:
