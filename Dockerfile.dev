@@ -1,63 +1,65 @@
 ARG FOLDER=/app
 ARG OPENCLAW_VERSION=v2026.2.13
 
-######## OPENCLAW BUILDER ########
-FROM node:24.13.0 AS openclaw-builder
-ARG OPENCLAW_VERSION
+FROM node:24.13.0 
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash \
-    ca-certificates \
-    curl \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
     git \
-    unzip && \
-    rm -rf /var/lib/apt/lists/*
+    curl \
+    ca-certificates \
+    unzip \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
 
+    # Allow the `node` user (uid 1000) to sudo to root without a password
+RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node && chmod 0440 /etc/sudoers.d/node
+
+# Install Bun (required for build)
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
 
+# Enable corepack for pnpm
 RUN corepack enable
 
 WORKDIR /lib/openclaw
 
-RUN git clone --depth 1 --branch "${OPENCLAW_VERSION}" https://github.com/openclaw/openclaw.git . && \
+# Clone and build OpenClaw - always fetch latest from main branch
+RUN git clone --depth 1 --branch ${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . && \
     echo "Building OpenClaw from branch: ${OPENCLAW_VERSION}" && \
-    git rev-parse HEAD > /lib/openclaw/openclaw-commit.txt && \
-    pnpm install --frozen-lockfile && \
-    OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build && \
-    npm_config_script_shell=bash pnpm ui:install && \
-    npm_config_script_shell=bash pnpm ui:build && \
-    CI=true pnpm prune --prod && \
-    find node_modules -type f -name '*.map' -delete && \
-    find node_modules/.pnpm -maxdepth 1 -type d -name '*musl*' -exec rm -rf {} + && \
-    rm -rf .git node_modules/.cache
+    git rev-parse HEAD > /lib/openclaw/openclaw-commit.txt
 
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
-######## RUNNER ########
-FROM node:24.13.0 AS runner
-ARG FOLDER
+# Build
+RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
+# Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
+RUN npm_config_script_shell=bash pnpm ui:install
+RUN npm_config_script_shell=bash pnpm ui:build
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Clean up build artifacts to reduce image size
+RUN rm -rf .git node_modules/.cache
 
-WORKDIR /lib/openclaw
-COPY --from=openclaw-builder /lib/openclaw /lib/openclaw
-
+# Global launcher so the process shows as "openclaw"
 RUN install -m 0755 /dev/null /usr/local/bin/openclaw && \
-    cat > /usr/local/bin/openclaw <<'EOF2' && \
+    cat > /usr/local/bin/openclaw <<'EOF' && \
     chmod 0755 /usr/local/bin/openclaw
-#!/bin/sh
-set -eu
+#!/usr/bin/env bash
+set -euo pipefail
 
-exec node --title=openclaw /lib/openclaw/dist/index.js "$@"
-EOF2
+# Forward all args to the CLI, and set a nicer process name/title.
+exec -a openclaw node --title=openclaw /lib/openclaw/dist/index.js "$@"
+EOF
 
+# Create app user (node already exists in base image)
+#RUN mkdir -p /home/node/.openclaw /home/node/.openclaw/workspace \
+#    && chown -R node:node /home/node /app \
+#    && chmod -R 755 /home/node/.openclaw
+
+# Not need to copy since we mount anyway
+#COPY . /app
 WORKDIR ${FOLDER}
-
-COPY . .
 
 ENV NODE_ENV=development
 
