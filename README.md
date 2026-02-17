@@ -1,12 +1,12 @@
 <img alt="OpenClaw icon" src=".diploi/icon.svg" width="32">
 
-# Starter OpenClaw
+# OpenClaw Starter Kit for Diploi
 
-Diploi starter for running a self-hosted OpenClaw in Diploi Development Mode with:
-- a wrapper server (`server/`) that initializes config, manages the OpenClaw gateway, and exposes control APIs
-- a React/Vite control UI (`web/`)
+OpenClaw Starter Kit for running a self-hosted OpenClaw in Diploi Development Environment with:
+- A wrapper server (`server/`) that initializes config, manages the OpenClaw gateway, and exposes control APIs
+- A React/Vite control UI (`web/`)
 
-## What This Project Does
+## ✨ Overview
 
 On startup, the wrapper:
 1. Initializes `/app/openclaw.json` (if missing) via `openclaw onboard`
@@ -16,7 +16,9 @@ On startup, the wrapper:
    - `/dashboard` to OpenClaw gateway UI
    - all other app routes to the Vite frontend
 
-## Requirements
+## 🧱 Architecture
+
+### Requirements
 
 - Diploi's Development Environment
 - Node.js 22+
@@ -25,7 +27,7 @@ On startup, the wrapper:
   - `openclaw` on `PATH`, or
   - `/lib/openclaw/dist/index.js` (provided in this repo's Docker images)
 
-## Environment Variables
+### Environment Variables
 
 Common variables used by the wrapper:
 
@@ -41,7 +43,7 @@ Common variables used by the wrapper:
 - `DIPLOI_LOGIN_SECRET` (required to validate `diploi-jwt-login` cookie)
 - `DIPLOI_LOGIN_USERNAME` / `DIPLOI_LOGIN_PASSWORD` (credential login)
 
-## Local Development
+### Development Workflow
 
 Install dependencies:
 
@@ -60,15 +62,7 @@ This starts:
 - `server/index.ts` (Hono wrapper API)
 - `web` Vite dev server
 
-## Production Run
-
-```bash
-npm run start
-```
-
-Note: current `npm run build` is a placeholder in `package.json`. If you need a build artifact, add a real build step first.
-
-## API Endpoints
+### API Endpoints
 
 Wrapper endpoints:
 
@@ -82,7 +76,7 @@ Wrapper endpoints:
 - `POST /api/logout`
 - `WS /api/terminal-ws` (browser terminal)
 
-## Project Structure
+### Project Structure
 
 ```text
 server/
@@ -97,3 +91,7 @@ Dockerfile.dev        # full dev image including OpenClaw build
 Dockerfile            # production runtime image
 diploi.yaml           # Diploi starter metadata
 ```
+## 💡 Docs
+
+- [OpenClaw Documentation](https://docs.openclaw.ai/)
+- [Diploi Documentation](https://docs.diploi.com/)
