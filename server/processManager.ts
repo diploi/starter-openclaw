@@ -24,6 +24,8 @@ const {
 
 const POLL_MS = 500;
 const READY_TIMEOUT_MS = 40_000;
+const MIN_RESTART_BACKOFF_MS = 2_000;
+const MAX_RESTART_BACKOFF_MS = 60_000;
 
 type ControlState = { desired: 'running' | 'stopped'; updatedAt: string };
 
@@ -149,6 +151,8 @@ async function main() {
   let proc: childProcess.ChildProcess | null = null;
   let status: GatewayStatus = defaultStatus();
   let restartCount = 0;
+  let loopInProgress = false;
+  let lastStartAttemptAt = 0;
 
   const writeStatusAndLog = (next: GatewayStatus, msg?: string) => {
     status = next;
@@ -258,8 +262,9 @@ async function main() {
 
     const ready = await waitForReady(READY_TIMEOUT_MS);
     if (ready && proc === p) {
+      restartCount = 0; // Reset on success so next failure uses minimal backoff
       writeStatusAndLog(
-        { ...status, state: 'running', readyAt: new Date().toISOString() },
+        { ...status, state: 'running', readyAt: new Date().toISOString(), restartCount: 0 },
         `Gateway ready (pid ${pid})`,
       );
       return true;
@@ -273,41 +278,64 @@ async function main() {
   writeStatusAndLog(defaultStatus());
 
   const loop = async () => {
-    const control = readControl();
+    if (loopInProgress) return;
+    loopInProgress = true;
+    try {
+      const control = readControl();
 
-    if (control.desired === 'stopped') {
-      if (proc) {
-        await stopChild();
-      }
-    } else {
-      if (!proc) {
-        await startChild();
-      } else if (status.state !== 'running') {
-        // Recover from stale "starting" states if the gateway is already reachable.
-        const reachable = await canConnect(status.target.host, status.target.port, 750);
-        if (reachable) {
-          writeStatusAndLog(
-            { ...status, state: 'running', readyAt: status.readyAt ?? new Date().toISOString(), lastError: null },
-            `Gateway reachable; marking running (pid ${status.pid})`,
+      if (control.desired === 'stopped') {
+        if (proc) {
+          await stopChild();
+        }
+      } else {
+        if (!proc) {
+          const now = Date.now();
+          const backoffMs = Math.min(
+            MAX_RESTART_BACKOFF_MS,
+            Math.max(MIN_RESTART_BACKOFF_MS, restartCount * 500),
           );
+          if (lastStartAttemptAt > 0 && now - lastStartAttemptAt < backoffMs) {
+            // Skip this cycle; we recently failed and should back off
+          } else {
+            lastStartAttemptAt = now;
+            await startChild();
+          }
+        } else if (status.state !== 'running') {
+          // Recover from stale "starting" states if the gateway is already reachable.
+          const reachable = await canConnect(status.target.host, status.target.port, 750);
+          if (reachable) {
+            writeStatusAndLog(
+              { ...status, state: 'running', readyAt: status.readyAt ?? new Date().toISOString(), lastError: null },
+              `Gateway reachable; marking running (pid ${status.pid})`,
+            );
+          }
         }
       }
+    } finally {
+      loopInProgress = false;
     }
   };
 
+  const scheduleNextLoop = () => {
+    intervalId = setTimeout(() => {
+      void loop().finally(scheduleNextLoop);
+    }, POLL_MS);
+  };
+
+  let intervalId: ReturnType<typeof setTimeout>;
   await loop();
-  const interval = setInterval(loop, POLL_MS);
+  scheduleNextLoop();
 
   process.on('SIGTERM', async () => {
     console.log('[process-manager] SIGTERM received');
-    clearInterval(interval);
+    clearTimeout(intervalId);
     await stopChild();
     process.exit(0);
   });
 
   process.on('SIGINT', async () => {
     console.log('[process-manager] SIGINT received');
-    clearInterval(interval);
+    clearTimeout(intervalId);
     await stopChild();
     process.exit(0);
   });
