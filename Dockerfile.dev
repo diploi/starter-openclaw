@@ -1,12 +1,13 @@
 ARG FOLDER=/app
 ARG OPENCLAW_VERSION=v2026.2.13
 
-FROM node:24.13.0 
+######## BUILDER ########
+FROM node:24.13.0 AS openclaw-builder
 ARG FOLDER=/app
 ARG OPENCLAW_VERSION=v2026.2.13
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
@@ -14,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-    # Allow the `node` user (uid 1000) to sudo to root without a password
+# Allow the `node` user (uid 1000) to sudo to root without a password
 RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node && chmod 0440 /etc/sudoers.d/node
 
 # Install Bun (required for build)
@@ -29,19 +30,32 @@ WORKDIR /lib/openclaw
 # Clone and build OpenClaw - always fetch latest from main branch
 RUN git clone --depth 1 --branch ${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . && \
     echo "Building OpenClaw from branch: ${OPENCLAW_VERSION}" && \
-    git rev-parse HEAD > /lib/openclaw/openclaw-commit.txt
+    git rev-parse HEAD > /lib/openclaw/openclaw-commit.txt && \
+    pnpm install --frozen-lockfile && \
+    OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build && \
+    npm_config_script_shell=bash pnpm ui:install && \
+    npm_config_script_shell=bash pnpm ui:build && \
+    CI=true pnpm prune --prod && \
+    find node_modules -type f -name '*.map' -delete && \
+    find node_modules/.pnpm -maxdepth 1 -type d -name '*musl*' -exec rm -rf {} + && \
+    rm -rf .git node_modules/.cache 
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
 
-# Build
-RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
-# Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
-RUN npm_config_script_shell=bash pnpm ui:install
-RUN npm_config_script_shell=bash pnpm ui:build
+######## RUNNER ########
+FROM node:24.13.0 AS openclaw-runner
+ARG FOLDER
 
-# Clean up build artifacts to reduce image size
-RUN rm -rf .git node_modules/.cache
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends\
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Allow the `node` user (uid 1000) to sudo to root without a password
+RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node && chmod 0440 /etc/sudoers.d/node
+
+WORKDIR /lib/openclaw
+
+COPY --from=openclaw-builder /lib/openclaw /lib/openclaw
 
 # Global launcher so the process shows as "openclaw"
 RUN install -m 0755 /dev/null /usr/local/bin/openclaw && \
