@@ -68,14 +68,9 @@ set -euo pipefail
 exec -a openclaw node --title=openclaw /lib/openclaw/dist/index.js "$@"
 EOF
 
-# Create app user (node already exists in base image)
-#RUN mkdir -p /home/node/.openclaw /home/node/.openclaw/workspace \
-#    && chown -R node:node /home/node /app \
-#    && chmod -R 755 /home/node/.openclaw
-
-# Not need to copy since we mount anyway
-#COPY . /app
 WORKDIR ${FOLDER}
+
+COPY . .
 
 ENV NODE_ENV=development
 
