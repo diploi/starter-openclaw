@@ -62,7 +62,7 @@ const updatePersistedState = (patch: Partial<PersistedGatewayState>) => {
 };
 
 
-export type GatewayState = 'stopped' | 'starting' | 'running' | 'stopping';
+export type GatewayState = 'stopped' | 'starting' | 'running' | 'stopping' | 'booting' | 'unknown';
 
 export type GatewayStatus = {
   state: GatewayState;
@@ -640,4 +640,3 @@ export const createGatewayManager = (config: OpenClawConfig): GatewayManager => 
 
   return { getStatus, ensureRunning, start, stop };
 };
-

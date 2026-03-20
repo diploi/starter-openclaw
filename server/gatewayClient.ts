@@ -11,7 +11,7 @@ import type { GatewayManager, GatewayStatus } from './gatewayManager.ts';
 const { gatewayControlFilePath, gatewayStatusFilePath, gatewayHost, gatewayPort } = gatewaySettings;
 
 const defaultStatus = (): GatewayStatus => ({
-  state: 'stopped',
+  state: 'unknown',
   pid: null,
   target: { host: gatewayHost, port: gatewayPort },
   startedAt: null,
@@ -31,7 +31,7 @@ const readStatus = (): GatewayStatus => {
     if (!raw) return defaultStatus();
     const parsed = JSON.parse(raw) as Partial<GatewayStatus>;
     return {
-      state: parsed?.state ?? 'stopped',
+      state: parsed?.state ?? 'unknown',
       pid: typeof parsed?.pid === 'number' ? parsed.pid : null,
       target: parsed?.target ?? { host: gatewayHost, port: gatewayPort },
       startedAt: typeof parsed?.startedAt === 'string' ? parsed.startedAt : null,

@@ -30,7 +30,7 @@ const MAX_RESTART_BACKOFF_MS = 60_000;
 type ControlState = { desired: 'running' | 'stopped'; updatedAt: string };
 
 type GatewayStatus = {
-  state: 'stopped' | 'starting' | 'running' | 'stopping';
+  state: 'stopped' | 'starting' | 'running' | 'stopping' | 'booting';
   pid: number | null;
   target: { host: string; port: number };
   startedAt: string | null;
@@ -41,7 +41,7 @@ type GatewayStatus = {
 };
 
 const defaultStatus = (): GatewayStatus => ({
-  state: 'stopped',
+  state: 'booting',
   pid: null,
   target: { host: gatewayHost, port: gatewayPort },
   startedAt: null,

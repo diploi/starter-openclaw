@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import logoutIcon from './assets/logout.svg'
 import openclawIcon from './assets/openclaw.svg'
 import TerminalEmbed from './Terminal.jsx'
 import './App.css'
 
-const POLL_MS = 2500
+const FAST_POLL_MS = 500
+const SLOW_POLL_MS = 2500
 
 const formatAgo = (fromIso, nowIso) => {
   if (!fromIso || !nowIso) return ''
@@ -42,6 +43,7 @@ const Section = ({ title, children }) => (
 
 function App() {
   const [status, setStatus] = useState({ state: 'unknown' })
+  const [pendingAction, setPendingAction] = useState(null)
   const [nowIso, setNowIso] = useState(new Date().toISOString())
   const [error, setError] = useState('')
   const [showStopConfirm, setShowStopConfirm] = useState(false)
@@ -51,27 +53,42 @@ function App() {
     () => window.location.pathname === '/terminal' || window.location.pathname.startsWith('/terminal/')
   )
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     try {
       const r = await fetch('/api/gateway/status', { cache: 'no-store' })
       const j = await r.json()
+      const nextGateway = j.gateway || {}
       setNowIso(j.now || new Date().toISOString())
-      setStatus(j.gateway || {})
+      setStatus((prev) => {
+        const nextState = nextGateway.state
+
+        // Keep optimistic transition while start/stop request is still in flight.
+        if (pendingAction === 'starting' && nextState === 'stopped') return prev
+        if (pendingAction === 'stopping' && (nextState === 'running' || nextState === 'booting' || nextState === 'starting')) return prev
+
+        return nextGateway
+      })
       setError('')
     } catch (err) {
       setError(String(err))
     }
-  }
+  }, [pendingAction])
+
+  const isRunning = status.state === 'running'
+  const isBooting = status.state === 'booting'
+  const isStarting = status.state === 'starting'
+  const isStopping = status.state === 'stopping'
+
+  const pollMs = useMemo(() => {
+    if (status.state === 'booting' || status.state === 'starting' || status.state === 'stopping') return FAST_POLL_MS
+    return SLOW_POLL_MS
+  }, [status.state])
 
   useEffect(() => {
     refresh()
-    const t = setInterval(refresh, POLL_MS)
+    const t = setInterval(refresh, pollMs)
     return () => clearInterval(t)
-  }, [])
-
-  const isRunning = status.state === 'running'
-  const isStarting = status.state === 'starting'
-  const isStopping = status.state === 'stopping'
+  }, [refresh, pollMs])
 
   const uptimeText = useMemo(() => {
     const basis = status.readyAt || status.startedAt
@@ -84,6 +101,7 @@ function App() {
 
   const callAction = async (path, optimisticState) => {
     setError('')
+    setPendingAction(optimisticState || null)
     if (optimisticState) {
       const optimisticNow = new Date().toISOString()
       setNowIso(optimisticNow)
@@ -101,6 +119,8 @@ function App() {
       setStatus(j.gateway || {})
     } catch (err) {
       setError(String(err))
+    } finally {
+      setPendingAction(null)
     }
   }
 
@@ -261,7 +281,7 @@ function App() {
             <Section title="Gateway Status">
               <div className="statusRow">
                 <span className="pill">
-                  <span className={`dot ${status.state === 'running' ? 'good' : status.state === 'stopped' ? 'bad' : ''}`} />
+                  <span className={`dot ${status.state === 'running' ? 'good' : status.state === 'stopped' ? 'bad' : status.state === 'booting' ? 'booting' : 'unknown'}`} />
                   <span>{capitalize(status.state || 'unknown')}</span>
                 </span>
                 <span className="muted">{uptimeText}</span>
@@ -271,19 +291,24 @@ function App() {
             </Section>
 
             <div className="controlButtons">
-              <button
-                className={`btn ${isRunning ? 'danger' : 'primary'} ${isStopping || isStarting ? 'loading' : ''}`}
-                type="button"
-                onClick={onToggle}
-                disabled={isStopping || isStarting}
-              >
-                {isStopping ? 'Stopping…' : isRunning ? 'Stop Gateway' : isStarting ? 'Starting…' : 'Start Gateway'}
-              </button>
+              {
+                !isResetting && (
+                  <button
+                    className={`btn ${isRunning ? 'danger' : 'primary'} ${isStopping || isStarting || isBooting ? 'loading' : ''}`}
+                    type="button"
+                    onClick={onToggle}
+                    disabled={isStopping || isStarting || isBooting}
+                  >
+                    {isStopping ? 'Stopping…' : isRunning ? 'Stop Gateway' : isStarting ? 'Starting…' : isBooting ? 'Booting…' : 'Start Gateway'}
+                  </button>
+                )
+              }
+
               <button
                 className={`btn danger ${isResetting ? 'loading' : ''}`}
                 type="button"
                 onClick={onResetClick}
-                disabled={isResetting || isStarting || isStopping}
+                disabled={isResetting || isStarting || isStopping || isBooting}
               >
                 {isResetting ? "Resetting…" : "Reset OpenClaw"}
               </button>
@@ -298,7 +323,7 @@ function App() {
                   This is Diploi Setup Page for OpenClaw, allowing gateway process's management through UI interface.
                 </p>
                 <p>
-                  You can restart the gateway or reset all OpenClaw data using the buttons on the left. The gateway status shows whether the gateway process is running, starting, stopping, or stopped, along with uptime information.
+                  You can restart the gateway or reset all OpenClaw data using the buttons on the left. The gateway status shows whether the gateway process is booting, running, starting, stopping, or stopped, along with uptime information.
                 </p>
                 <p>
                   Configuring OpenClaw can be done either through the <a href="/dashboard" target="_blank" rel="noopener noreferrer">OpenClaw Dashboard</a> or by using the OpenClaw CLI.
