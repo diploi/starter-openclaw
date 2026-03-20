@@ -140,6 +140,7 @@ async function patchConfig(): Promise<void> {
   cfg.gateway.controlUi.allowedOrigins = [process.env.APP_ENDPOINT ?? ''];
   cfg.gateway.controlUi.basePath = '/dashboard';
   cfg.gateway.controlUi.allowInsecureAuth = true;
+  cfg.gateway.controlUi.dangerouslyDisableDeviceAuth = true;
 
   // Touch meta timestamp (best-effort)
   cfg.meta.lastTouchedAt = new Date().toISOString();
@@ -150,8 +151,6 @@ async function patchConfig(): Promise<void> {
   cfg.plugins.entries ||= {};
   const discordPlugin = (cfg.plugins.entries.discord ||= {});
   discordPlugin.enabled = true;
-  const whatsappPlugin = (cfg.plugins.entries.whatsapp ||= {});
-  whatsappPlugin.enabled = true;
   const telegramPlugin = (cfg.plugins.entries.telegram ||= {});
   telegramPlugin.enabled = true;
   const slackPlugin = (cfg.plugins.entries.slack ||= {});
@@ -174,12 +173,6 @@ async function patchConfig(): Promise<void> {
   if (discordToken) {
     discordChannelConfig.token = discordToken;
   }
-
-  // Default Whatsapp channel config
-  const whatsappChannelConfig = (cfg.channels.whatsapp ||= {});
-  whatsappChannelConfig.dmPolicy = "allowlist";
-  whatsappChannelConfig.selfChatMode = true;
-
 
   // Default Telegram channel config
   const telegramToken = process.env.TELEGRAM_BOT_TOKEN?.trim();

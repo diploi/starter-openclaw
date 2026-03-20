@@ -166,6 +166,7 @@ function App() {
       }
       settings.token = token;
       localStorage.setItem(key, JSON.stringify(settings));
+      sessionStorage.setItem(`openclaw.control.token.v1:${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/dashboard`, token);
       window.open('/dashboard', '_blank');
 
     } catch (err) {
