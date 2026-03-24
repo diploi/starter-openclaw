@@ -7,7 +7,7 @@ import { logInfo } from './utils.ts';
 
 import { gatewaySettings } from './constants.ts';
 import type { OpenClawConfig } from './openclawjson.type.ts';
-import { setupSkills } from './setupSkills.ts';
+import { setupDiploiDefault } from './setupDiploiDefault.ts';
 
 const { configPath, statePath, workspacePath, openclawScriptPath, gatewayHost, gatewayPort } = gatewaySettings;
 
@@ -213,8 +213,8 @@ export const initOpenclaw = async () => {
     logInfo(`Patching OpenClaw config`);
     await patchConfig();
 
-    logInfo(`Set up default skills`);
-    setupSkills();
+    logInfo(`Set up default Diploi files in workspace`);
+    setupDiploiDefault();
 
     logInfo(`Initialized OpenClaw config at ${configPath}`);
     return await loadConfig() as OpenClawConfig;
