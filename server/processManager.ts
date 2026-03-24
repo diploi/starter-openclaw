@@ -6,10 +6,10 @@
  */
 import childProcess from 'node:child_process';
 import fs from 'node:fs';
-import path from 'node:path';
 import net from 'node:net';
 import { gatewaySettings } from './constants.ts';
 import type { OpenClawConfig } from './openclawjson.type.ts';
+import ensureDir from './utils/ensureDir.ts';
 
 const {
   configPath,
@@ -50,10 +50,6 @@ const defaultStatus = (): GatewayStatus => ({
   lastExit: null,
   lastError: null,
 });
-
-const ensureDir = (filePath: string) => {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-};
 
 const readControl = (): ControlState => {
   try {

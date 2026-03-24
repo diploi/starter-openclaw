@@ -7,6 +7,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { gatewaySettings } from './constants.ts';
 import type { GatewayManager, GatewayStatus } from './gatewayManager.ts';
+import ensureDir from './utils/ensureDir.ts';
 
 const { gatewayControlFilePath, gatewayStatusFilePath, gatewayHost, gatewayPort } = gatewaySettings;
 
@@ -21,9 +22,6 @@ const defaultStatus = (): GatewayStatus => ({
   lastError: null,
 });
 
-const ensureDir = (filePath: string) => {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-};
 
 const readStatus = (): GatewayStatus => {
   try {
