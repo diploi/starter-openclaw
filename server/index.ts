@@ -12,6 +12,7 @@ import type { GatewayManager, GatewayStatus } from './gatewayManager.ts';
 import { logInfo } from './utils.ts';
 import { registerApiRoutes } from './api.ts';
 import { handleTerminalUpgrade, isTerminalWsPath } from './terminalWs.ts';
+import { startDevicePairingCron } from './devicePairingCron.ts';
 
 
 const TARGET_HOST = '127.0.0.1';
@@ -37,6 +38,7 @@ const getGatewayFallbackStatus = (): GatewayStatus => ({
 
 let gateway: GatewayManager | null = null;
 let gatewayStartPromise: Promise<void> | null = null;
+let stopDevicePairingCron: (() => void) | null = null;
 
 
 const wrapperInit = {
@@ -298,6 +300,7 @@ void (async () => {
     await initOpenclaw();
     gateway = createGatewayClient();
     await gateway.ensureRunning();
+    stopDevicePairingCron = startDevicePairingCron(logInfo);
     wrapperInit.state = 'ready';
     wrapperInit.readyAt = new Date().toISOString();
   } catch (err) {
@@ -308,6 +311,8 @@ void (async () => {
 
 process.on('SIGTERM', () => {
   logInfo(`SIGTERM received`);
+  stopDevicePairingCron?.();
+  stopDevicePairingCron = null;
   // In watch mode, SIGTERM is typically used for hot-restarts. Let the gateway
   // keep running so the next wrapper instance can adopt it without lock races.
   process.exit(0);
@@ -316,11 +321,15 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logInfo(`SIGINT received`);
+  stopDevicePairingCron?.();
+  stopDevicePairingCron = null;
   process.exit(0);
 });
 
 process.on('SIGHUP', () => {
   logInfo(`SIGHUP received`);
+  stopDevicePairingCron?.();
+  stopDevicePairingCron = null;
   process.exit(0);
   //void gateway?.stop().finally(() => process.exit(0));
 });
@@ -328,6 +337,8 @@ process.on('SIGHUP', () => {
 
 process.on('exit', () => {
   logInfo(`exit received`);
+  stopDevicePairingCron?.();
+  stopDevicePairingCron = null;
   // Can't await here; best-effort only.
   //if (!isWatchMode) void gateway?.stop();
 });
