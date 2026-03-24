@@ -12,6 +12,7 @@ const DEFAULT_INTERVAL_SECONDS = 30;
 const DEFAULT_MAX_APPROVALS_PER_RUN = 20;
 
 type Logger = (...args: unknown[]) => void;
+type IsGatewayReady = () => boolean | Promise<boolean>;
 
 type CronJob = {
     id?: string;
@@ -139,6 +140,17 @@ const parseRequestIds = (output: PairingRequest): string[] => {
     return [...ids];
 };
 
+const isTransientGatewayError = (message: string): boolean => {
+    const m = message.toLowerCase();
+    return (
+        m.includes('gateway closed') ||
+        m.includes('abnormal closure') ||
+        m.includes('econnrefused') ||
+        m.includes('socket hang up') ||
+        m.includes('connection reset')
+    );
+};
+
 const listPairingRequests = async (): Promise<string[]> => {
     let result = await runOpenclaw(['devices', 'list', '--json']);
     if (result.code !== 0) {
@@ -162,7 +174,7 @@ const approveRequest = async (requestId: string): Promise<void> => {
     }
 };
 
-export const startDevicePairingCron = (log: Logger): (() => void) => {
+export const startDevicePairingCron = (log: Logger, isGatewayReady?: IsGatewayReady): (() => void) => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let running = false;
     let stopped = false;
@@ -181,6 +193,19 @@ export const startDevicePairingCron = (log: Logger): (() => void) => {
 
         try {
             const job = loadJob();
+
+            if (isGatewayReady && !(await isGatewayReady())) {
+                log('[pairing-cron] gateway not ready, skipping tick');
+                updateState({
+                    lastCheckedAt: new Date().toISOString(),
+                    lastSeenRequestIds: [],
+                    lastApprovedRequestIds: [],
+                    lastError: null,
+                });
+                schedule(job.intervalSeconds * 1000);
+                return;
+            }
+
             if (!job.enabled) {
                 updateState({
                     lastCheckedAt: new Date().toISOString(),
@@ -228,6 +253,19 @@ export const startDevicePairingCron = (log: Logger): (() => void) => {
         } catch (err) {
             const nextInterval = loadJob().intervalSeconds;
             const message = String(err);
+
+            if (isTransientGatewayError(message)) {
+                log('[pairing-cron] gateway unavailable, will retry');
+                updateState({
+                    lastCheckedAt: new Date().toISOString(),
+                    lastSeenRequestIds: [],
+                    lastApprovedRequestIds: [],
+                    lastError: null,
+                });
+                schedule(nextInterval * 1000);
+                return;
+            }
+
             log('[pairing-cron] error:', message);
             updateState({
                 lastCheckedAt: new Date().toISOString(),

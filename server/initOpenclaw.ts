@@ -98,6 +98,7 @@ async function patchConfig(): Promise<void> {
   cfg.gateway ||= {};
   cfg.gateway.controlUi ||= {};
   cfg.meta ||= {};
+  cfg.skills ||= {};
 
   // Agents defaults
   cfg.agents.defaults.workspace = workspacePath;
@@ -142,6 +143,16 @@ async function patchConfig(): Promise<void> {
   cfg.gateway.controlUi.basePath = '/dashboard';
   cfg.gateway.controlUi.allowInsecureAuth = true;
   cfg.gateway.controlUi.dangerouslyDisableDeviceAuth = true;
+
+
+  // Setup default skills config
+  cfg.skills.install ||= {};
+  cfg.skills.install.nodeManager = "npm";
+  cfg.skills.entries ||= {};
+  cfg.skills.entries["skill-creator"] ||= {};
+  cfg.skills.entries["skill-creator"].enabled = true;
+  cfg.skills.entries["hello-diploi"] ||= {};
+  cfg.skills.entries["hello-diploi"].enabled = true;
 
   // Touch meta timestamp (best-effort)
   cfg.meta.lastTouchedAt = new Date().toISOString();

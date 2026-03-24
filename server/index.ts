@@ -300,7 +300,7 @@ void (async () => {
     await initOpenclaw();
     gateway = createGatewayClient();
     await gateway.ensureRunning();
-    stopDevicePairingCron = startDevicePairingCron(logInfo);
+    stopDevicePairingCron = startDevicePairingCron(logInfo, () => gateway?.getStatus().state === 'running');
     wrapperInit.state = 'ready';
     wrapperInit.readyAt = new Date().toISOString();
   } catch (err) {
