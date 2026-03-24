@@ -24,7 +24,7 @@ const LOGIN_SECRET = process.env.DIPLOI_LOGIN_SECRET ?? '';
 
 
 const getGatewayFallbackStatus = (): GatewayStatus => ({
-  state: 'stopped',
+  state: 'booting',
   pid: null,
   target: { host: TARGET_HOST, port: TARGET_PORT },
   startedAt: null,
