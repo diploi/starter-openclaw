@@ -7,6 +7,7 @@ import { logInfo } from './utils.ts';
 
 import { gatewaySettings } from './constants.ts';
 import type { OpenClawConfig } from './openclawjson.type.ts';
+import { setupSkills } from './setupSkills.ts';
 
 const { configPath, statePath, workspacePath, openclawScriptPath, gatewayHost, gatewayPort } = gatewaySettings;
 
@@ -200,6 +201,10 @@ export const initOpenclaw = async () => {
     await runOnboard();
     logInfo(`Patching OpenClaw config`);
     await patchConfig();
+
+    logInfo(`Set up default skills`);
+    setupSkills();
+
     logInfo(`Initialized OpenClaw config at ${configPath}`);
     return await loadConfig() as OpenClawConfig;
   } catch (err: any) {
