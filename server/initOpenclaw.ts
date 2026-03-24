@@ -153,16 +153,6 @@ async function patchConfig(): Promise<void> {
   discordPlugin.enabled = true;
   const telegramPlugin = (cfg.plugins.entries.telegram ||= {});
   telegramPlugin.enabled = true;
-  const slackPlugin = (cfg.plugins.entries.slack ||= {});
-  slackPlugin.enabled = true;
-  const ircPlugin = (cfg.plugins.entries.irc ||= {});
-  ircPlugin.enabled = true;
-  const signalPlugin = (cfg.plugins.entries.signal ||= {});
-  signalPlugin.enabled = true;
-  const googlechatPlugin = (cfg.plugins.entries.googlechat ||= {});
-  googlechatPlugin.enabled = true;
-  const bluebubblesPlugin = (cfg.plugins.entries.bluebubbles ||= {});
-  bluebubblesPlugin.enabled = true;
 
   // Default Discord channel config
   cfg.channels ||= {};
@@ -180,6 +170,7 @@ async function patchConfig(): Promise<void> {
   telegramChannelConfig.enabled = true; // Disabled by default
   telegramChannelConfig.dmPolicy = "pairing";
   telegramChannelConfig.groups ||= {};
+  telegramChannelConfig.groupPolicy = "open";
 
   if (telegramToken) {
     telegramChannelConfig.enabled = true;
