@@ -22,13 +22,6 @@ const formatAgo = (fromIso, nowIso) => {
   return parts.join(' ')
 }
 
-const formatTimestamp = (iso) => {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleString()
-}
-
 const capitalize = (value) => {
   if (!value) return ''
   return `${value.charAt(0).toUpperCase()}${value.slice(1)}`
@@ -318,19 +311,47 @@ function App() {
           {/* Right Column */}
           <div className="column columnRight">
             <Section title="Instructions">
-              <div className="muted instructionsText">
-                <p>
-                  This is Diploi Setup Page for OpenClaw, allowing gateway process's management through UI interface.
+              <div className="instructionsText">
+                <p className="muted lead">
+                  Manage your OpenClaw gateway from this page. Use the controls on the left to start, stop, or reset.
                 </p>
-                <p>
-                  You can restart the gateway or reset all OpenClaw data using the buttons on the left. The gateway status shows whether the gateway process is booting, running, starting, stopping, or stopped, along with uptime information.
-                </p>
-                <p>
-                  Configuring OpenClaw can be done either through the <a href="/dashboard" target="_blank" rel="noopener noreferrer">OpenClaw Dashboard</a> or by using the OpenClaw CLI.
-                  You can also edit openclaw.json directly in the Cloud IDE by clicking the "Code in the Browser" button on the OpenClaw Deployment page.</p>
+
+                <ol className="steps">
+                  <li className="stepItem">
+                    <span className="stepNum">1</span>
+                    <div>
+                      <strong>Wait for the gateway to boot</strong>
+                      <span className="muted"> — status changes from <em>booting</em> to <em>running</em>. This may take up to a minute.</span>
+                    </div>
+                  </li>
+                  <li className="stepItem">
+                    <span className="stepNum">2</span>
+                    <div>
+                      <strong>Open the admin dashboard</strong>
+                      <span className="muted"> — once running, click <em>"Open OpenClaw Dashboard"</em> to manage your instance.</span>
+                    </div>
+                  </li>
+                  <li className="stepItem">
+                    <span className="stepNum">3</span>
+                    <div>
+                      <strong>Configure OpenClaw</strong>
+                      <span className="muted">
+                        {" "}
+                        — via the{" "}
+                        <a href="/dashboard" target="_blank" rel="noopener noreferrer">
+                          dashboard
+                        </a>
+                        , by editing <code>openclaw.json</code> in the Cloud IDE, or by using the
+                        terminal below. To connect locally, click <em>"Connect"</em> on the Node.js
+                        container in the Diploi deployment page and paste the SSH command into your
+                        terminal.
+                      </span>
+                    </div>
+                  </li>
+                </ol>
+
                 <p className="tip">
-                  <strong>Documentation:</strong> For more detailed instructions and troubleshooting, please refer to the <a href="https://docs.openclaw.ai/start/getting-started" target="_blank" rel="noopener noreferrer">OpenClaw Documentation</a> or
-                  contact Diploi support if you need any assistance with your OpenClaw deployment.
+                  <strong>Need help?</strong> See the <a href="https://docs.openclaw.ai/start/getting-started" target="_blank" rel="noopener noreferrer">OpenClaw documentation</a> or contact Diploi support.
                 </p>
               </div>
             </Section>

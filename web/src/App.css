@@ -403,12 +403,51 @@ h1 {
   line-height: 1.6;
 }
 
-.instructionsText p {
-  margin: 0 0 12px;
+.instructionsText .lead {
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 0 0 16px;
 }
 
-.instructionsText p:last-child {
-  margin-bottom: 0;
+.instructionsText a {
+  color: #ff8da1;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.instructionsText a:hover {
+  text-decoration: underline;
+}
+
+.steps {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.stepItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.stepNum {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 92, 122, 0.35), rgba(138, 92, 255, 0.3));
+  border: 1px solid rgba(255, 92, 122, 0.4);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text);
+  margin-top: 1px;
 }
 
 .instructionsText code {
@@ -419,11 +458,12 @@ h1 {
 }
 
 .tip {
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-top: 12px !important;
+  border-left: 2px solid rgba(255, 92, 122, 0.55);
+  padding: 4px 12px;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .terminal-section {
