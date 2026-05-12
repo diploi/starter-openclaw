@@ -106,9 +106,9 @@ async function patchConfig(): Promise<void> {
   cfg.agents.defaults.subagents ||= {};
   cfg.agents.defaults.subagents.maxConcurrent = 8;
   cfg.agents.defaults.model ||= {};
-  cfg.agents.defaults.model.primary = 'custom-proxy/gpt-4.1-nano';
+  cfg.agents.defaults.model.primary = 'custom-proxy/gpt-5-nano';
   cfg.agents.defaults.models ||= {};
-  cfg.agents.defaults.models['custom-proxy/gpt-4.1-nano'] ||= {};
+  cfg.agents.defaults.models['custom-proxy/gpt-5-nano'] ||= {};
 
   // Model provider (only if env is present; otherwise leave whatever onboard created)
   const diploiBase = process.env.DIPLOI_AI_GATEWAY_URL?.trim();
@@ -117,11 +117,11 @@ async function patchConfig(): Promise<void> {
     cfg.models.providers['custom-proxy'] = {
       baseUrl: `${diploiBase}/v1`,
       apiKey: diploiToken,
-      api: 'openai-completions',
+      api: 'openai-responses',
       models: [
         {
-          id: 'gpt-4.1-nano',
-          name: 'GPT-4.1 Nano',
+          id: 'gpt-5-nano',
+          name: 'GPT-5 Nano',
           reasoning: false,
           input: ['text'],
           contextWindow: 200000,
