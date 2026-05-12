@@ -117,7 +117,7 @@ async function patchConfig(): Promise<void> {
     cfg.models.providers['custom-proxy'] = {
       baseUrl: `${diploiBase}/v1`,
       apiKey: diploiToken,
-      api: 'openai-responses',
+      api: 'openai-completions',
       models: [
         {
           id: 'gpt-5-nano',
