@@ -19,6 +19,9 @@ const TARGET_HOST = '127.0.0.1';
 const TARGET_PORT = 18789;
 const VITE_HOST = process.env.VITE_HOST ?? '127.0.0.1';
 const VITE_PORT = Number(process.env.VITE_PORT ?? 5173);
+const APP_PORT = Number(process.env.PORT ?? 3000);
+const MODEL_PROXY_PREFIX = '/model-proxy';
+const DIPLOI_AI_UPSTREAM = process.env.DIPLOI_AI_GATEWAY_URL?.trim() ?? 'http://core.diploi/ai-core-proxy';
 const LOGIN_COOKIE_NAME = 'diploi-jwt-login';
 const LOGIN_SECRET = process.env.DIPLOI_LOGIN_SECRET ?? '';
 
@@ -152,6 +155,68 @@ const proxyTo = async (c: Context, target: ProxyTarget) => {
   }
 };
 
+const proxyToAbsoluteBase = async (c: Context, baseUrl: string, stripPrefix: string) => {
+  let upstreamBase: URL;
+  try {
+    upstreamBase = new URL(baseUrl);
+  } catch {
+    return new Response('Model proxy upstream is not configured', {
+      status: 503,
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    });
+  }
+
+  const incoming = new URL(c.req.url);
+  const incomingPath = incoming.pathname;
+  const suffix = incomingPath.startsWith(stripPrefix)
+    ? incomingPath.slice(stripPrefix.length) || '/'
+    : incomingPath;
+
+  const upstream = new URL(upstreamBase.toString());
+  const basePath = upstream.pathname.replace(/\/$/, '');
+  const nextPath = suffix.startsWith('/') ? suffix : `/${suffix}`;
+  upstream.pathname = `${basePath}${nextPath}`;
+  upstream.search = incoming.search;
+
+  const headers = new Headers(c.req.raw.headers);
+  headers.set('host', upstream.host);
+
+  const method = c.req.method;
+  const body = method === 'GET' || method === 'HEAD' ? undefined : c.req.raw.body;
+  const init: RequestInit & { duplex?: 'half' } = {
+    method,
+    headers,
+    body,
+    redirect: 'manual',
+  };
+  if (body) init.duplex = 'half';
+
+  try {
+    const upstreamRes = await fetch(upstream, init);
+    const responseHeaders = new Headers(upstreamRes.headers);
+
+    // Some upstreams stream SSE as text/plain; normalize to event-stream for strict clients.
+    const isChatCompletions = upstream.pathname.endsWith('/chat/completions');
+    const isPlain = (upstreamRes.headers.get('content-type') ?? '').toLowerCase().includes('text/plain');
+    if (upstreamRes.status === 200 && isChatCompletions && isPlain) {
+      responseHeaders.set('content-type', 'text/event-stream; charset=utf-8');
+      responseHeaders.delete('content-length');
+      responseHeaders.set('cache-control', 'no-cache');
+      responseHeaders.set('connection', 'keep-alive');
+    }
+
+    return new Response(upstreamRes.body, {
+      status: upstreamRes.status,
+      headers: responseHeaders,
+    });
+  } catch (err) {
+    return new Response(`Model proxy upstream error: ${String(err)}`, {
+      status: 502,
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    });
+  }
+};
+
 const app = new Hono();
 
 const loginHeaders = { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' };
@@ -280,6 +345,10 @@ const dashboardHandler = async (c: Context) => {
 
 app.all('/dashboard', dashboardHandler);
 app.all('/dashboard/*', dashboardHandler);
+
+app.all('/model-proxy', (c: Context) => proxyToAbsoluteBase(c, DIPLOI_AI_UPSTREAM, MODEL_PROXY_PREFIX));
+app.all('/model-proxy/*', (c: Context) => proxyToAbsoluteBase(c, DIPLOI_AI_UPSTREAM, MODEL_PROXY_PREFIX));
+
 app.all('*', (c: Context) => proxyTo(c, { host: VITE_HOST, port: VITE_PORT }));
 
 const port = Number(process.env.PORT ?? 3000);
@@ -290,6 +359,11 @@ server.on('listening', () => {
   logInfo(`Listening on ${host}:${port}`);
   logInfo(`Proxying dashboard to http://${TARGET_HOST}:${TARGET_PORT}`);
   logInfo(`Proxying app routes to http://${VITE_HOST}:${VITE_PORT}`);
+  if (DIPLOI_AI_UPSTREAM) {
+    logInfo(`Proxying model routes from http://127.0.0.1:${APP_PORT}${MODEL_PROXY_PREFIX} to ${DIPLOI_AI_UPSTREAM}`);
+  } else {
+    logInfo(`Model proxy upstream is not configured (set DIPLOI_AI_GATEWAY_URL)`);
+  }
 });
 
 

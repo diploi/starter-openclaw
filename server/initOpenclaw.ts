@@ -85,6 +85,8 @@ async function runOnboard(): Promise<void> {
 async function patchConfig(): Promise<void> {
   const raw = await readFile(configPath, 'utf8');
   const cfg = JSON.parse(raw || '{}') as OpenClawConfig;
+  const appPort = Number(process.env.PORT ?? 3000);
+  const localModelProxyBaseUrl = `http://127.0.0.1:${appPort}/model-proxy/v1`;
 
   // Use token from env or 
   const envToken = process.env.OPENCLAW_GATEWAY_TOKEN?.trim();
@@ -115,7 +117,7 @@ async function patchConfig(): Promise<void> {
   const diploiToken = process.env.DIPLOI_AI_GATEWAY_TOKEN?.trim();
   if (diploiBase && diploiToken) {
     cfg.models.providers['custom-proxy'] = {
-      baseUrl: `${diploiBase}/v1`,
+      baseUrl: localModelProxyBaseUrl,
       apiKey: diploiToken,
       api: 'openai-completions',
       models: [
@@ -198,9 +200,14 @@ export const initOpenclaw = async () => {
   if (config) {
     logInfo(`Config exists at ${configPath}`);
 
+    const appPort = Number(process.env.PORT ?? 3000);
+    const localModelProxyBaseUrl = `http://127.0.0.1:${appPort}/model-proxy/v1`;
     const diploiToken = process.env.DIPLOI_AI_GATEWAY_TOKEN?.trim();
-    if (diploiToken && config.models?.providers?.["custom-proxy"]) {
-      config.models.providers["custom-proxy"].apiKey = diploiToken;
+    if (config.models?.providers?.["custom-proxy"]) {
+      if (diploiToken) {
+        config.models.providers["custom-proxy"].apiKey = diploiToken;
+      }
+      config.models.providers["custom-proxy"].baseUrl = localModelProxyBaseUrl;
       await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, { encoding: 'utf8' });
     }
 
