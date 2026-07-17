@@ -161,28 +161,38 @@ function App() {
 
   const onOpenDashboard = async () => {
     setError('')
+    const dashboardWindow = window.open('about:blank', '_blank')
+    if (!dashboardWindow) {
+      setError('Popup blocked. Please allow popups and try again.')
+      return
+    }
+
     try {
       const r = await fetch('/api/dashboard-token', { cache: 'no-store' })
       const j = await r.json()
       if (!j || !j.ok || !j.token) {
+        dashboardWindow.close()
         setError(j?.error || 'Dashboard token not available yet.')
         return
       }
-      const token = j.token;
-      const key = "openclaw.control.settings.v1";
-      let settings = {};
+      const token = j.token
+      const key = 'openclaw.control.settings.v1'
+      let settings = {}
       try {
-        const current = localStorage.getItem(key);
-        settings = current ? JSON.parse(current) : {};
+        const current = localStorage.getItem(key)
+        settings = current ? JSON.parse(current) : {}
       } catch {
-        settings = {};
+        settings = {}
       }
-      settings.token = token;
-      localStorage.setItem(key, JSON.stringify(settings));
-      sessionStorage.setItem(`openclaw.control.token.v1:${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/dashboard`, token);
-      window.open('/dashboard', '_blank');
-
+      settings.token = token
+      const dashboardUrl = new URL('/dashboard', window.location.origin)
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const tokenKey = `openclaw.control.token.v1:${wsProtocol}//${window.location.host}/dashboard`
+      dashboardWindow.localStorage.setItem(key, JSON.stringify(settings))
+      dashboardWindow.sessionStorage.setItem(tokenKey, token)
+      dashboardWindow.location.href = dashboardUrl.href
     } catch (err) {
+      dashboardWindow.close()
       setError(String(err))
     }
   }
