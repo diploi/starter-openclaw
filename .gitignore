@@ -40,6 +40,12 @@ gateway.token
 gateway.pid
 update-check.json
 logs/
+cache/
+tmp/
+state/
+config-journal-fingerprint.key
+plugin-skills/
+media/
 
 #telegram
 telegram

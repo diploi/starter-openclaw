@@ -1,9 +1,9 @@
 ARG FOLDER=/app
 
 ######## BUILDER ########
-FROM node:24.13.0 AS openclaw-builder
+FROM node:25.9.0 AS openclaw-builder
 ARG FOLDER=/app
-ARG OPENCLAW_VERSION=v2026.6.11
+ARG OPENCLAW_VERSION=v2026.8.1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,12 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Allow the `node` user (uid 1000) to sudo to root without a password
 RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node && chmod 0440 /etc/sudoers.d/node
 
-# Install Bun (required for build)
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
-
-# Enable corepack for pnpm
-RUN corepack enable
+# Node 25 no longer bundles Corepack, while its image still ships legacy Yarn
+# binaries that conflict with Corepack's package-manager shims.
+RUN npm install --global --force corepack@0.34.7 && corepack enable
 
 WORKDIR /lib/openclaw
 
@@ -41,7 +38,7 @@ RUN git clone --depth 1 --branch ${OPENCLAW_VERSION} https://github.com/openclaw
 
 
 ######## RUNNER ########
-FROM node:24.13.0 AS openclaw-runner
+FROM node:25.9.0 AS openclaw-runner
 ARG FOLDER
 
 # Install system dependencies

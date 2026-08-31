@@ -2,8 +2,65 @@ import { readFile } from 'node:fs/promises';
 import type { Hono } from 'hono';
 import type { Context } from 'hono';
 import type { GatewayManager, GatewayStatus } from './gatewayManager.ts';
+import { gatewaySettings } from './constants.ts';
+import runWithOutput from './utils/runWithOutput.ts';
+import { DASHBOARD_LOADING_HTML } from './utils/dashboardLoading.ts';
+
 
 const CONFIG_PATH = process.env.OPENCLAW_CONFIG_PATH ?? '/app/openclaw.json';
+const { statePath, workspacePath, openclawScriptPath } = gatewaySettings;
+
+const openclawEnv = () => ({
+  ...process.env,
+  OPENCLAW_CONFIG_PATH: CONFIG_PATH,
+  OPENCLAW_STATE_DIR: statePath,
+  OPENCLAW_WORKSPACE_DIR: workspacePath,
+});
+
+const extractDashboardUrl = (output: string): string | null => {
+  const jsonStart = output.indexOf('{');
+  const jsonEnd = output.lastIndexOf('}');
+  if (jsonStart >= 0 && jsonEnd > jsonStart) {
+    try {
+      const parsed = JSON.parse(output.slice(jsonStart, jsonEnd + 1)) as {
+        ok?: boolean;
+        browserUrl?: string;
+        url?: string;
+      };
+      const candidate = parsed.browserUrl ?? parsed.url;
+      if (parsed.ok !== false && candidate) return new URL(candidate).toString();
+    } catch {
+      // Fall through for older, human-readable CLI output.
+    }
+  }
+
+  const matches = output.match(/https?:\/\/[^\s\u001b]+/g) ?? [];
+  for (const candidate of matches) {
+    try {
+      const url = new URL(candidate.replace(/[),.;]+$/, ''));
+      // A dashboard handoff carries its credential in the query or fragment.
+      if (url.search || url.hash) return url.toString();
+    } catch {
+      // Ignore prose that merely resembles a URL.
+    }
+  }
+  return null;
+};
+
+const createDashboardHandoff = async (): Promise<string | null> => {
+  const args = ['dashboard', '--json'];
+  const env = openclawEnv();
+  let result = await runWithOutput('openclaw', args, { timeoutMs: 15_000, env });
+  let url = result.code === 0 ? extractDashboardUrl(result.output) : null;
+
+  // Some managed terminals install a non-functional `openclaw` shim. Fall back
+  // when the command failed or did not actually print a dashboard handoff.
+  if (!url) {
+    result = await runWithOutput('node', [openclawScriptPath, ...args], { timeoutMs: 15_000, env });
+    url = result.code === 0 ? extractDashboardUrl(result.output) : null;
+  }
+  return url;
+};
 const getGatewayTokenFromConfig = async (): Promise<string | null> => {
   try {
     const raw = await readFile(CONFIG_PATH, 'utf8');
@@ -31,6 +88,29 @@ type ApiDeps = {
 };
 
 export const registerApiRoutes = (app: Hono, deps: ApiDeps) => {
+  app.get('/dashboard-loading', (c: Context) => c.html(DASHBOARD_LOADING_HTML, 200, { 'cache-control': 'no-store' }));
+  app.get('/api/dashboard-link', async (c: Context) => {
+    const handoff = await createDashboardHandoff();
+    if (handoff) {
+      const generated = new URL(handoff);
+      // Return only the gateway path and signed handoff data. The browser adds
+      // its public origin, avoiding an http:// URL leaked by TLS termination.
+      const browserPath = `${generated.pathname}${generated.search}${generated.hash}`;
+      deps.logInfo(`/api/dashboard-link`);
+      return c.json({ ok: true, url: browserPath }, 200, { 'cache-control': 'no-store' });
+    }
+
+    // Compatibility with releases predating owner handoff links.
+    const token = await getGatewayTokenFromConfig();
+    if (!token) {
+      return c.json({ ok: false, error: 'Dashboard handoff is not available yet' }, 503, {
+        'cache-control': 'no-store',
+        'retry-after': '2',
+      });
+    }
+    return c.json({ ok: true, url: '/dashboard', token }, 200, { 'cache-control': 'no-store' });
+  });
+
   app.get('/api/dashboard-token', async (c: Context) => {
     const tok = await getGatewayTokenFromConfig();
     if (!tok) {

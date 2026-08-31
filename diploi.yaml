@@ -1,33 +1,33 @@
+# This file is used to build the infrastructure for a deployment.
+# After editing something here, apply the changes on the Diploi dashboard.
+# For more information, see https://diploi.com/yaml
+
 diploiVersion: v1.0
-type: starter
-name: OpenClaw
-description: A self-hosted OpenClaw, providing control UI for managing, and configuring the OpenClaw assistant. Pre-configured with Diploi custom AI proxy, ready to prompt and use with the OpenClaw assistant.
-previewImageUrls: [preview-1.jpg, preview-2.jpg]
 components:
-  - name: OpenClaw
+  - hosts:
+      - name: Control UI
+        identifier: app
+    name: OpenClaw
     identifier: openclaw
     folder: /
     package: https://github.com/diploi/component-nodejs#v24.13.0
     prebuildImage: public.ecr.aws/p8t2q7f4/diploi/starter-openclaw:[tag]
     env:
       include:
-        - name: OPENCLAW_CONFIG_PATH
-          value: /app/openclaw.json
-        - name: OPENCLAW_STATE_DIR
-          value: /app
-        - name: DIPLOI_AI_GATEWAY_URL
-          value: '{diploi-ai-gateway-url}'
-        - name: DIPLOI_AI_GATEWAY_TOKEN
-          value: '{diploi-ai-gateway-token}'
-        - name: DIPLOI_AI_GATEWAY_TOKEN
-          value: '{diploi-ai-gateway-token}'
-        - name: DIPLOI_LOGIN_SECRET
-          value: "base64:${generate-random-bytes:32}"
-        - name: DIPLOI_LOGIN_USERNAME
-          value: 'admin'
-        - name: DIPLOI_LOGIN_PASSWORD
-          value: 'password'
-    hosts:
-      - identifier: app
-        name: Control UI
+        - value: /app/openclaw.json
+          name: OPENCLAW_CONFIG_PATH
+        - value: /app
+          name: OPENCLAW_STATE_DIR
+        - value: /app/workspace
+          name: OPENCLAW_WORKSPACE_DIR
+        - value: '{diploi-ai-gateway-url}'
+          name: DIPLOI_AI_GATEWAY_URL
+        - value: '{diploi-ai-gateway-token}'
+          name: DIPLOI_AI_GATEWAY_TOKEN
+        - value: base64:${generate-random-bytes:32}
+          name: DIPLOI_LOGIN_SECRET
+        - value: admin
+          name: DIPLOI_LOGIN_USERNAME
+        - value: password
+          name: DIPLOI_LOGIN_PASSWORD
 addons: []
