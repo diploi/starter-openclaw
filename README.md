@@ -1,20 +1,30 @@
 <img alt="OpenClaw icon" src=".diploi/icon.svg" width="32">
 
-# OpenClaw Starter Kit for Diploi
+# OpenClaw v2.0 Setup for Diploi
 
 OpenClaw Starter Kit for running a self-hosted OpenClaw in Diploi Development Environment with:
+
 - A wrapper server (`server/`) that initializes config, manages the OpenClaw gateway, and exposes control APIs
 - A React/Vite control UI (`web/`)
+
+Version 2.0 updates the bundled OpenClaw runtime to `v2026.8.1` and introduces a secure owner-handoff flow for opening the OpenClaw dashboard.
 
 ## ✨ Overview
 
 On startup, the wrapper:
+
 1. Initializes `/app/openclaw.json` (if missing) via `openclaw onboard`
 2. Patches config defaults (gateway token, model provider, channel/plugin defaults)
 3. Starts and monitors the OpenClaw gateway on `127.0.0.1:18789`
 4. Proxies:
    - `/dashboard` to OpenClaw gateway UI
    - all other app routes to the Vite frontend
+
+### Dashboard access in v2.0
+
+Selecting **Open dashboard** opens a loading page while the wrapper requests a signed owner-handoff URL from OpenClaw. The browser then opens the dashboard on the public application origin, preserving the signed handoff data without exposing the gateway's internal URL.
+
+For compatibility with older OpenClaw releases that do not support owner-handoff URLs, the wrapper falls back to the existing gateway-token flow.
 
 ## 🧱 Architecture
 
@@ -58,6 +68,7 @@ npm run dev
 ```
 
 This starts:
+
 - `server/processManager.ts`
 - `server/index.ts` (Hono wrapper API)
 - `web` Vite dev server
@@ -67,7 +78,9 @@ This starts:
 Wrapper endpoints:
 
 - `GET /healthz`
-- `GET /api/dashboard-token`
+- `GET /dashboard-loading` (temporary page shown while the dashboard handoff is created)
+- `GET /api/dashboard-link` (returns the signed dashboard handoff path, with a legacy token fallback)
+- `GET /api/dashboard-token` (legacy compatibility)
 - `GET /api/gateway/status`
 - `POST /api/gateway/start`
 - `POST /api/gateway/stop`
@@ -85,12 +98,15 @@ server/
   initOpenclaw.ts     # OpenClaw config bootstrap + patching
   api.ts              # API routes
   terminalWs.ts       # PTY websocket bridge
+  utils/
+    dashboardLoading.ts # dashboard handoff loading page
 web/
   src/                # React UI
 Dockerfile.dev        # full dev image including OpenClaw build
 Dockerfile            # production runtime image
 diploi.yaml           # Diploi starter metadata
 ```
+
 ## 💡 Docs
 
 - [OpenClaw Documentation](https://docs.openclaw.ai/)

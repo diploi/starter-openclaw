@@ -129,6 +129,10 @@ const proxyTo = async (c: Context, target: ProxyTarget) => {
 
   const headers = new Headers(c.req.raw.headers);
   headers.set('host', `${target.host}:${target.port}`);
+  // Node fetch transparently decompresses upstream responses but can retain the
+  // compressed Content-Length/Content-Encoding headers. Request an identity
+  // body so streamed HTML and assets are never truncated by the wrapper.
+  headers.set('accept-encoding', 'identity');
   if (target.bearer) headers.set('authorization', `Bearer ${target.bearer}`);
 
   const method = c.req.method;
@@ -143,9 +147,14 @@ const proxyTo = async (c: Context, target: ProxyTarget) => {
 
   try {
     const upstream = await fetch(url, init);
+    const responseHeaders = new Headers(upstream.headers);
+    // The response is streamed and may have been decoded by fetch. Let the
+    // outer server calculate framing rather than forwarding stale byte counts.
+    responseHeaders.delete('content-length');
+    responseHeaders.delete('content-encoding');
     return new Response(upstream.body, {
       status: upstream.status,
-      headers: upstream.headers,
+      headers: responseHeaders,
     });
   } catch (err) {
     return new Response(`Upstream error: ${String(err)}`, {
@@ -476,5 +485,3 @@ server.on('upgrade', (req: IncomingMessage, socket: net.Socket, head: Buffer) =>
   upstreamSocket.on('error', onError);
   socket.on('error', onError);
 });
-
-
