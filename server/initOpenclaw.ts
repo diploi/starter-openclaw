@@ -108,29 +108,117 @@ async function patchConfig(): Promise<void> {
   cfg.agents.defaults.subagents ||= {};
   cfg.agents.defaults.subagents.maxConcurrent = 8;
   cfg.agents.defaults.model ||= {};
-  cfg.agents.defaults.model.primary = 'custom-proxy/gpt-5-nano';
+  cfg.agents.defaults.model.primary = 'custom-proxy-openai-completions/gpt-5-nano';
   cfg.agents.defaults.models ||= {};
-  cfg.agents.defaults.models['custom-proxy/gpt-5-nano'] ||= {};
 
-  // Model provider (only if env is present; otherwise leave whatever onboard created)
+  const defaultModelKeys = [
+    'custom-proxy-openai-completions/gpt-5-nano',
+    'custom-proxy-openai-completions/@cf/moonshotai/kimi-k2.7-code',
+    'custom-proxy-openai-completions/@cf/zai-org/glm-5.3-flash',
+    'custom-proxy-openai-completions/@cf/qwen/qwen3.8-27b',
+    'custom-proxy-openai-response/gpt-5.6-sol',
+    'custom-proxy-openai-response/gpt-5.6-terra',
+    'custom-proxy-anthropic-messages/claude-sonnet-5',
+    'custom-proxy-anthropic-messages/claude-opus-5',
+  ];
+
+  for (const modelKey of defaultModelKeys) {
+    cfg.agents.defaults.models[modelKey] ||= {};
+  }
+
+  // Model providers (only if env is present; otherwise leave whatever onboard created)
   const diploiBase = process.env.DIPLOI_AI_GATEWAY_URL?.trim();
   const diploiToken = process.env.DIPLOI_AI_GATEWAY_TOKEN?.trim();
   if (diploiBase && diploiToken) {
-    cfg.models.providers['custom-proxy'] = {
-      baseUrl: localModelProxyBaseUrl,
-      apiKey: diploiToken,
-      api: 'openai-completions',
-      models: [
-        {
-          id: 'gpt-5-nano',
-          name: 'GPT-5 Nano',
-          reasoning: false,
-          input: ['text'],
-          contextWindow: 200000,
-          maxTokens: 8192,
-        },
-      ],
-    };
+    const providerDefinitions = {
+      'custom-proxy-openai-completions': {
+        api: 'openai-completions',
+        models: [
+          {
+            id: 'gpt-5-nano',
+            name: 'GPT-5 Nano',
+            reasoning: false,
+            input: ['text'],
+            contextWindow: 200000,
+            maxTokens: 8192,
+          },
+          {
+            id: '@cf/moonshotai/kimi-k2.7-code',
+            name: 'Kimi K2.7 Code',
+            reasoning: true,
+            input: ['text', 'image', 'video'],
+            contextWindow: 262144,
+            maxTokens: 262144,
+          },
+          {
+            id: '@cf/zai-org/glm-5.3-flash',
+            name: 'GLM 5.3 Flash',
+            reasoning: true,
+            input: ['text', 'image', 'video'],
+            contextWindow: 1048576,
+            maxTokens: 131000,
+          },
+          {
+            id: '@cf/qwen/qwen3.8-27b',
+            name: 'Qwen 3.8',
+            reasoning: true,
+            input: ['text', 'image', 'video'],
+            contextWindow: 262144,
+            maxTokens: 65536,
+          },
+        ],
+      },
+      'custom-proxy-openai-response': {
+        api: 'openai-responses',
+        models: [
+          {
+            id: 'gpt-5.6-sol',
+            name: 'GPT-5.6 Sol',
+            reasoning: true,
+            input: ['text', 'image', 'video'],
+            contextWindow: 1050000,
+            maxTokens: 128000,
+          },
+          {
+            id: 'gpt-5.6-terra',
+            name: 'GPT-5.6 Terra',
+            reasoning: true,
+            input: ['text', 'image', 'video'],
+            contextWindow: 1050000,
+            maxTokens: 128000,
+          },
+        ],
+      },
+      'custom-proxy-anthropic-messages': {
+        api: 'anthropic-messages',
+        models: [
+          {
+            id: 'claude-sonnet-5',
+            name: 'Claude Sonnet 5',
+            reasoning: true,
+            input: ['text', 'image', 'video'],
+            contextWindow: 1000000,
+            maxTokens: 128000,
+          },
+          {
+            id: 'claude-opus-5',
+            name: 'Claude Opus 5',
+            reasoning: true,
+            input: ['text', 'image', 'video'],
+            contextWindow: 1000000,
+            maxTokens: 128000,
+          },
+        ],
+      },
+    } as const;
+
+    for (const [providerName, providerConfig] of Object.entries(providerDefinitions)) {
+      cfg.models.providers[providerName] = {
+        baseUrl: localModelProxyBaseUrl,
+        apiKey: diploiToken,
+        ...providerConfig,
+      };
+    }
   }
 
   // Gateway defaults for wrapper/proxy setup
@@ -203,11 +291,19 @@ export const initOpenclaw = async () => {
     const appPort = Number(process.env.PORT ?? 3000);
     const localModelProxyBaseUrl = `http://127.0.0.1:${appPort}/model-proxy/v1`;
     const diploiToken = process.env.DIPLOI_AI_GATEWAY_TOKEN?.trim();
-    if (config.models?.providers?.["custom-proxy"]) {
-      if (diploiToken) {
-        config.models.providers["custom-proxy"].apiKey = diploiToken;
+    const customProxyProviders = Object.entries(config.models?.providers ?? {}) as Array<
+      [string, Record<string, any>]
+    >;
+    const matchingProviders = customProxyProviders.filter(([providerName]) => providerName.startsWith('custom-proxy'));
+
+    if (matchingProviders.length > 0) {
+      for (const [providerName, providerConfig] of matchingProviders) {
+        if (diploiToken) {
+          providerConfig.apiKey = diploiToken;
+        }
+        providerConfig.baseUrl = localModelProxyBaseUrl;
+        config.models.providers[providerName] = providerConfig;
       }
-      config.models.providers["custom-proxy"].baseUrl = localModelProxyBaseUrl;
       await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, { encoding: 'utf8' });
     }
 
