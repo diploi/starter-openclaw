@@ -277,8 +277,12 @@ const runFullReset = async (): Promise<{ ok: boolean; error?: string; gateway: G
   try {
     await gateway.stop();
     logInfo('full-reset: gateway stopped');
+
+    // Keep the active OpenClaw workspace intact unless the user explicitly wants a fresh workspace bootstrap.
+    // Deleting workspace triggers the CLI's safety guard that refuses to reseed BOOTSTRAP.md.
     await runNpmClean(process.cwd());
     logInfo('full-reset: npm run clean done');
+
     await initOpenclaw();
     await gateway.ensureRunning();
     logInfo('full-reset: gateway started');
